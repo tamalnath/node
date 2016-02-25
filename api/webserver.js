@@ -31,6 +31,23 @@ const colors = {
 	},
 	reset : '\x1b[0m'
 };
+
+const pidFile = process.argv[1].replace(/.js$/, '.pid');
+if (process.argv[2] === 'stop') {
+	var pid = fs.readFileSync(pidFile);
+	process.kill(pid);
+	return;
+}
+fs.writeFile(pidFile, process.pid, (err) => {
+	if (err) {
+		throw err;
+	}
+	process.on('exit', (code) => {
+		fs.unlinkSync(pidFile);
+		console.log('Exit code:', code);
+	});
+});
+
 const port = process.argv[2] || 8080;
 const base = process.argv[3] || process.cwd();
 process.title = "Web Server";

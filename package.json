@@ -11,7 +11,7 @@
   "scripts": {
     "jshint": "jshint .",
     "start": "node api/webServer.js",
-    "stop": "pkill --signal SIGINT myApp"
+    "stop": "node api/webServer.js stop"
   },
   "repository": {
     "type": "git",
