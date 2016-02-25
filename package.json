@@ -5,10 +5,13 @@
   "main": "index.js",
   "dependencies": {},
   "devDependencies": {
-    "jshint": "^2.9.1"
+    "jshint": "^2.9.1",
+    "uglify-js": "^2.6.2"
   },
   "scripts": {
-    "jshint": "jshint ."
+    "jshint": "jshint .",
+    "start": "node api/webServer.js",
+    "stop": "pkill --signal SIGINT myApp"
   },
   "repository": {
     "type": "git",
