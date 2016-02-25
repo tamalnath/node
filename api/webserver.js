@@ -19,8 +19,14 @@ function createServer (request, response) {
 
 	function stat(err, stats) {
 		if (err) {
-			response.writeHead(404);
-			response.end('404 : ' + fsPath + ' Not found');
+			if (err.code === 'ENOENT') {
+				response.writeHead(404);
+				response.end('404 : ' + fsPath + ' Not found');
+			} else {
+				response.writeHead(403);
+				response.end('500 : ' + fsPath + ' returns error: ' + err.code);
+				console.log(err);
+			}
 			return;
 		}
 		if (stats.isDirectory()) {
@@ -46,12 +52,20 @@ function createServer (request, response) {
 				response.writeHead(304, headers);
 				response.end();
 			} else {
-				response.writeHead(200, headers);
-				fs.createReadStream(base + fsPath).pipe(response);
+				if (fsPath.startsWith('/api/') && fsPath.endsWith('.js')) {
+					const script = require(base + fsPath);
+					if (typeof script.execute === 'function') {
+						script.execute(request, response);
+					}
+					response.end();
+				} else {
+					response.writeHead(200, headers);
+					fs.createReadStream(base + fsPath).pipe(response);
+				}
 			}
 		} else {
 			response.writeHead(403);
 			response.end('403 : ' + fsPath + ' Not a regular file');
 		}
 	}
-};
+}

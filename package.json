@@ -1,0 +1,26 @@
+{
+  "name": "node",
+  "version": "1.0.0",
+  "description": "NodeJS application",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "jshint": "^2.9.1"
+  },
+  "scripts": {
+    "jshint": "jshint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamalnath/node.git"
+  },
+  "keywords": [
+    "nodejs"
+  ],
+  "author": "Tamal Kanti Nath",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tamalnath/node/issues"
+  },
+  "homepage": "https://github.com/tamalnath/node"
+}
