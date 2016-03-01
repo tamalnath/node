@@ -1,6 +1,70 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const cluster = require('cluster');
+const os = require('os');
+
+const base = process.argv[3] || process.cwd();
+const port = process.argv[2] || 8080;
+const pidFile = process.argv[1].replace(/.js$/, '.pid');
+
+if (cluster.isMaster) {
+	fs.stat(pidFile, pidStat);
+} else {
+	http.createServer(createServer).listen(port);
+}
+
+function pidStat(error, stats) {
+	if (error) {
+		if (error.code === 'ENOENT') {
+			if (process.argv[2] === 'stop') {
+				console.log('Service not started');
+				process.exit(13);
+			} else {
+				fs.writeFile(pidFile, process.pid, function(error) {
+					if (error) {
+						throw error;
+					}
+					fs.watch(pidFile, (event, fileName) => {
+						process.exit();
+					});
+				});
+				var cpus = os.cpus().length;
+				for (var i = 0; i < cpus; i++) {
+					cluster.fork();
+				}
+				console.log('Serving ' + base + ' at http://127.0.0.1:' + port + '/');
+				cluster.on('exit', function(worker, code, signal) {
+		    		console.log('worker ${worker.process.pid} died');
+		  		});
+				// process.on('SIGINT', process.exit);
+				process.on('exit', stopService);
+			}
+		} else {
+			throw error;
+		}
+	} else {
+		if (process.argv[2] === 'stop') {
+			fs.unlink(pidFile, function(err) {
+				if (err) {
+					throw err;
+				} else {
+					console.log('Service stopped');
+					process.exit();
+				}
+			});
+		} else {
+			console.log('Service is already started');
+			process.exit(13);
+		}
+	}
+}
+
+function stopService() {
+	console.log('Stopping service');
+	fs.unlink(pidFile);
+}
+
 const mimeTypes = {
 	'.html'  : 'text/html',
 	'.css'   : 'text/css',
@@ -32,27 +96,6 @@ const colors = {
 	reset : '\x1b[0m'
 };
 
-const pidFile = process.argv[1].replace(/.js$/, '.pid');
-if (process.argv[2] === 'stop') {
-	var pid = fs.readFileSync(pidFile);
-	process.kill(pid);
-	return;
-}
-fs.writeFile(pidFile, process.pid, (err) => {
-	if (err) {
-		throw err;
-	}
-	process.on('exit', (code) => {
-		fs.unlinkSync(pidFile);
-		console.log('Exit code:', code);
-	});
-});
-
-const port = process.argv[2] || 8080;
-const base = process.argv[3] || process.cwd();
-process.title = "Web Server";
-http.createServer(createServer).listen(port);
-console.log('Serving ' + base + ' at http://127.0.0.1:' + port + '/');
 
 function createServer (request, response) {
 	var fsPath = request.url;
