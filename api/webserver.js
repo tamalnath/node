@@ -19,26 +19,25 @@ function pidStat(error, stats) {
 		if (error.code === 'ENOENT') {
 			if (process.argv[2] === 'stop') {
 				console.log('Service not started');
-				process.exit(13);
+				process.exit();
 			} else {
 				fs.writeFile(pidFile, process.pid, function(error) {
 					if (error) {
 						throw error;
 					}
-					fs.watch(pidFile, (event, fileName) => {
-						process.exit();
-					});
+					fs.watch(pidFile, process.exit);
 				});
 				var cpus = os.cpus().length;
+				var workers = [];
 				for (var i = 0; i < cpus; i++) {
-					cluster.fork();
+					workers[i] = cluster.fork().process.pid;
 				}
-				console.log('Serving ' + base + ' at http://127.0.0.1:' + port + '/');
-				cluster.on('exit', function(worker, code, signal) {
-		    		console.log('worker ${worker.process.pid} died');
-		  		});
-				// process.on('SIGINT', process.exit);
-				process.on('exit', stopService);
+				console.log('Serving ' + base + ' at http://127.0.0.1:' + port + '/ (Master: ' + process.pid + ', Workers: ' + workers + ')');
+				process.on('SIGINT', process.exit);
+				process.on('exit', function() {
+					console.log('Stopping service');
+					fs.unlinkSync(pidFile);
+				});
 			}
 		} else {
 			throw error;
@@ -55,14 +54,9 @@ function pidStat(error, stats) {
 			});
 		} else {
 			console.log('Service is already started');
-			process.exit(13);
+			process.exit();
 		}
 	}
-}
-
-function stopService() {
-	console.log('Stopping service');
-	fs.unlink(pidFile);
 }
 
 const mimeTypes = {
